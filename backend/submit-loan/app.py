@@ -57,7 +57,7 @@ def lambda_handler(event, context):
 
     s3.put_object(
 
-        Bucket="loan-raw-data",
+        Bucket="loan-raw-data1",
 
         Key=f"{loan_id}.json",
 
