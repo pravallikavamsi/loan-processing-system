@@ -1,31 +1,36 @@
 import json
 import boto3
+import os
 
-logs = boto3.client("logs")
+sns = boto3.client("sns")
 
+TOPIC_ARN = os.environ["SNS_TOPIC_ARN"]
 
 def lambda_handler(event, context):
 
     print(json.dumps(event))
 
-    detail = event["detail"]
+    loan = event["detail"]
 
-    loan_id = detail["loanId"]
+    message = f"""
+Loan Submitted Successfully
 
-    status = detail["status"]
+Loan ID : {loan['loanId']}
 
-    score = detail["creditScore"]
+Customer : {loan['customerId']}
 
-    message = {
-        "loanId": loan_id,
-        "status": status,
-        "creditScore": score,
-        "message": f"Loan {status}"
-    }
+Amount : {loan['amount']}
 
-    print(json.dumps(message))
+Loan Type : {loan['loanType']}
+"""
+
+    sns.publish(
+        TopicArn=TOPIC_ARN,
+        Subject="Loan Application Submitted",
+        Message=message
+    )
 
     return {
         "statusCode": 200,
-        "body": json.dumps(message)
+        "body": "Notification Sent"
     }
