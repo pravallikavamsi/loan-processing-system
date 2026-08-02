@@ -1,64 +1,45 @@
 import json
 import boto3
-import random
 
 dynamodb = boto3.resource("dynamodb")
-events = boto3.client("events")
-
 table = dynamodb.Table("LoanApplications")
-
 
 def lambda_handler(event, context):
 
+    print("Received Event:")
     print(json.dumps(event))
 
-    detail = event["detail"]
+    loan = event["detail"]
 
-    loan_id = detail["loanId"]
+    loan_id = loan["loanId"]
 
-    amount = detail["amount"]
+    amount = int(loan["amount"])
 
-    score = random.randint(300, 900)
+    if amount <= 500000:
 
-    if score >= 650:
         status = "APPROVED"
+
+    elif amount <= 1000000:
+
+        status = "MANUAL_REVIEW"
+
     else:
+
         status = "REJECTED"
 
     table.update_item(
         Key={
             "loanId": loan_id
         },
-        UpdateExpression="SET creditScore=:score, loanStatus=:status",
+        UpdateExpression="SET loanStatus = :s",
         ExpressionAttributeValues={
-            ":score": score,
-            ":status": status
+            ":s": status
         }
     )
 
-    events.put_events(
-        Entries=[
-            {
-                "Source": "loan.credit",
-                "DetailType": "CreditChecked",
-                "Detail": json.dumps({
-                    "loanId": loan_id,
-                    "customerId": detail["customerId"],
-                    "amount": amount,
-                    "creditScore": score,
-                    "status": status
-                }),
-                "EventBusName": "default"
-            }
-        ]
-    )
+    print("Loan Updated")
 
     return {
         "statusCode": 200,
-        "body": json.dumps({
-            "message": "Credit Check Completed",
-            "loanId": loan_id,
-            "status": status,
-            "creditScore": score
-        })
+        "body": json.dumps(status)
     }
